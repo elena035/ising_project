@@ -4,9 +4,7 @@ This repository contains a parallelized simulation of the 2D Ising Model perform
 
 The simulation aims to study the phase transition occurring approximately at the critical inverse temperature $\beta_c \approx 0.4406$. This is achieved by computing the intensive instantaneous magnetization, defined as:
 
-\begin{equation}
-m = \frac{1}{L^2} \sum_{i=1}^{L^2} s_i
-\end{equation}
+$$ m = \frac{1}{L^2} \sum_{i=1}^{L^2} s_i$$
 
 where $s_i \in \{-1, +1\}$ is the value of the $i$-th spin.
 
@@ -17,35 +15,26 @@ The simulation code is written in C (parallelized with MPI) and is fully availab
 
 The algorithm evolves the system through the following steps:
 
-\begin{enumerate}
+1. Initialization: Start from a random configuration for the $L \times L$ lattice, where each spin is randomly assigned a value of $+1$ or $-1$.
 
-\item Initialization: Start from a random configuration for the $L \times L$ lattice, where each spin is randomly assigned a value of $+1$ or $-1$.
+2. Proposal: Propose a new energy configuration by picking a random spin and flipping its sign (single spin-flip).
 
-\item Proposal: Propose a new energy configuration by picking a random spin and flipping its sign (single spin-flip).
+3. Energy Evaluation: Compute the energy difference between the new and old configurations:
 
-\item Energy Evaluation: Compute the energy difference between the new and old configurations:
-
-\begin{equation}
-\Delta E = E_{new} - E_{old} = 2 s_i \sum_{\langle i,j \rangle} s_j
-\end{equation}
+$$ \Delta E = E_{new} - E_{old} = 2 s_i \sum_{\langle i,j \rangle} s_j$$
 
 where $s_i$ is the value of the flipped spin (before the flip) and the sum runs over its 4 nearest neighbors. Since the lattice has a coordination number of 4, $\Delta E$ is a discrete variable that can only assume 5 specific values: $\{-8J, -4J, 0, +4J, +8J\}$.
 
-\item Acceptance Step: According to the Metropolis criterion, the probability of accepting the proposed configuration is given by:
+4. Acceptance Step: According to the Metropolis criterion, the probability of accepting the proposed configuration is given by:
 
-\begin{equation}
- p= \min(1, e^{-\beta \Delta E})
-\end{equation}
+$$  p= \min(1, e^{-\beta \Delta E}) $$
 
-\begin{itemize}
-\item  If $\Delta E \le 0$, the algorithm always accepts the move.
 
-\item If $\Delta E > 0$, the exponential $e^{-\beta \Delta E}$ is calculated and compared with a random number $r \in [0, 1)$. The new configuration is accepted only if $r < e^{-\beta \Delta E}$.
-\end{itemize}
+- If $\Delta E \le 0$, the algorithm always accepts the move.
 
-\item Iteration: Repeat these steps to evolve the system over time.
+- If $\Delta E > 0$, the exponential $e^{-\beta \Delta E}$ is calculated and compared with a random number $r \in [0, 1)$. The new configuration is accepted only if $r < e^{-\beta \Delta E}$.
 
-\end{enumerate}
+5. Iteration: Repeat these steps to evolve the system over time.
 
 
 ## Termalization and measurement
