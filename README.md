@@ -17,27 +17,35 @@ The simulation code is written in C (parallelized with MPI) and is fully availab
 
 The algorithm evolves the system through the following steps:
 
-1. Initialization: Start from a random configuration for the $L \times L$ lattice, where each spin is randomly assigned a value of $+1$ or $-1$.
+\begin{enumerate}
 
-2. Proposal: Propose a new energy configuration by picking a random spin and flipping its sign (single spin-flip).
+\item Initialization: Start from a random configuration for the $L \times L$ lattice, where each spin is randomly assigned a value of $+1$ or $-1$.
 
-3. Energy Evaluation: Compute the energy difference between the new and old configurations:
+\item Proposal: Propose a new energy configuration by picking a random spin and flipping its sign (single spin-flip).
 
-$$\Delta E = E_{new} - E_{old} = 2 s_i \sum_{\langle i,j \rangle} s_j$$
+\item Energy Evaluation: Compute the energy difference between the new and old configurations:
+
+\begin{equation}
+\Delta E = E_{new} - E_{old} = 2 s_i \sum_{\langle i,j \rangle} s_j
+\end{equation}
 
 where $s_i$ is the value of the flipped spin (before the flip) and the sum runs over its 4 nearest neighbors. Since the lattice has a coordination number of 4, $\Delta E$ is a discrete variable that can only assume 5 specific values: $\{-8J, -4J, 0, +4J, +8J\}$.
 
-4. Acceptance Step: According to the Metropolis criterion, the probability of accepting the proposed configuration is given by:
+\item Acceptance Step: According to the Metropolis criterion, the probability of accepting the proposed configuration is given by:
 
 \begin{equation}
-p = \min(1, e^{-\beta \Delta E})
+ p= \min(1, e^{-\beta \Delta E})
 \end{equation}
 
-- If $\Delta E \le 0$, the algorithm always accepts the move.
+\begin{itemize}
+\item  If $\Delta E \le 0$, the algorithm always accepts the move.
 
-- If $\Delta E > 0$, the exponential $e^{-\beta \Delta E}$ is calculated and compared with a random number $r \in [0, 1)$. The new configuration is accepted only if $r < e^{-\beta \Delta E}$.
+\item If $\Delta E > 0$, the exponential $e^{-\beta \Delta E}$ is calculated and compared with a random number $r \in [0, 1)$. The new configuration is accepted only if $r < e^{-\beta \Delta E}$.
+\end{itemize}
 
-5. Iteration: Repeat these steps to evolve the system over time.
+\item Iteration: Repeat these steps to evolve the system over time.
+
+\end{enumerate}
 
 
 ## Termalization and measurement
