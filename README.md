@@ -47,12 +47,19 @@ Once equilibrium is reached, the measurement phase begins. To obtain solid and r
 
 ## Repository Structure:
 
-/parallel_code/ : Contains the C source code and the Makefile.
+/parallel_code/ : Contains the C source code and the `Makefile`
 
 /scripts/ : Bash scripts for production runs
 
-/input_parameters/ : Contains the input file /.txt/ used in the simulation
+/input_parameters/ : Contains the input file `.txt` used as input parameters for the simulations
 
 /ising_analysis/ : Notebook with python scripts for results visualization and results' analysis
 
 /assets/ : Generated plots, images, and GIFs of the lattice evolution.
+
+/results/ : Contains the .csv files summarizing the final physical observables, such as the absolute magnetization averaged across all independent samples during the measurement phase, along with its standard deviation for each $L$ and $\beta$.
+
+/simulations/ : Stores all the spin configuration trajectories and instantaneous magnetization histories for every tested $L$ and $\beta$.
+
+/execution_times/ : Contains the .csv logs with the recorded execution times (computation vs. communication) used to generate the speedup scaling plots.
+
