@@ -1,0 +1,11 @@
+k_B 1.0
+h 0.0
+J 1.0
+num_betas 9
+betas: 0.1 0.2 0.3 0.4 0.44 0.5 0.6 0.7 0.8
+frame_freq 500
+meas_freq 50
+meas_sweeps 5000
+eq_sweeps 1000
+L_pow_max 5
+L_pow_min 4
