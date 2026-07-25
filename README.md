@@ -1,6 +1,6 @@
 # 2D Ising Model Simulation
 
-This repository contains a parallelized simulation of the 2D Ising Model performed for different lattice sizes ($L \times L$), specifically $L = 16, 32, 64,$ and $128$.
+This repository contains a parallelized simulation of the 2D Ising Model performed for different lattice sizes ($L \times L$), specifically $L = 60, 120,$ and $240$.
 
 The simulation aims to study the phase transition occurring approximately at the critical inverse temperature $\beta_c \approx 0.4406$. This is achieved by computing the intensive instantaneous magnetization, defined as:
 
@@ -57,9 +57,9 @@ Once equilibrium is reached, the measurement phase begins. To obtain solid and r
 
 /assets/ : Generated plots, images, and GIFs of the lattice evolution.
 
-/results/ : Contains the .csv files summarizing the final physical observables, such as the absolute magnetization averaged across all independent samples during the measurement phase, along with its standard deviation for each $L$ and $\beta$.
+/results/ : Contains the `.csv` files summarizing the final physical observables, such as the absolute magnetization averaged across all independent samples during the measurement phase, along with its standard deviation for each $L$ and $\beta$.
 
 /simulations/ : Stores all the spin configuration trajectories and instantaneous magnetization histories for every tested $L$ and $\beta$.
 
-/execution_times/ : Contains the .csv logs with the recorded execution times (computation vs. communication) used to generate the speedup scaling plots.
+/execution_times/ : Contains the `.csv` logs with the recorded execution times (computation vs. communication) used to generate the speedup scaling plots.
 

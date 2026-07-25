@@ -7,5 +7,5 @@ frame_freq 500
 meas_freq 500
 meas_sweeps 50000
 eq_sweeps 20000
-L_pow_max 7
-L_pow_min 4
+num_L 3
+L_values 60 120 240
