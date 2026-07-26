@@ -33,6 +33,18 @@ int main(int argc, char *argv[]) {
     parametri p; 
     leggi_parametri(file_input, &p);
 
+    // --- CONTROLLO ROBUSTEZZA: DIVISIONE ESATTA DEL RETICOLO ---
+    // Controlliamo subito che tutti i valori di L siano divisibili per il numero di processi
+    for (int i = 0; i < p.num_L; i++) {
+        if (p.L_values[i] % size != 0) {
+            if (rank == 0) {
+                printf("ERRORE CRITICO: Il reticolo L = %d non è divisibile esattamente per %d processi.\n", p.L_values[i], size);
+            }
+            MPI_Finalize();
+            return 1;
+        }
+    }
+
     // --- STAMPA INTESTAZIONE E PARAMETRI (Solo Rank 0) ---
     if (rank == 0) {
         printf("\n================================================================================\n");
@@ -69,9 +81,9 @@ int main(int argc, char *argv[]) {
     // --- 2. CICLO SULLE TAGLIE (L) ---
     for(int i = 0; i < p.num_L; i++) {
         
+        // Timer per i tempi di calcolo e di comunicazione
         double tempo_calcolo_totale = 0.0;
         double tempo_comunicazione_totale = 0.0;
-        double tempo_salvataggio_totale = 0.0; // Contatore I/O e raccolta dati
 
         p.L = p.L_values[i]; 
         int L = p.L;
@@ -103,8 +115,6 @@ int main(int argc, char *argv[]) {
             char nome_traiettoria[256]; 
             
             if (rank == 0) {
-                double start_io = MPI_Wtime(); 
-                
                 char nome_evoluzione[256];
                 sprintf(nome_evoluzione, "simulazioni/L_%d/evoluzione_L_%d_beta_%.3f.csv", L, L, beta);
                 file_evoluzione = fopen(nome_evoluzione, "w");
@@ -115,8 +125,6 @@ int main(int argc, char *argv[]) {
                 sprintf(nome_traiettoria, "simulazioni/L_%d/traiettoria_L_%d_beta_%.3f.txt", L, L, beta);
                 FILE *ftraj = fopen(nome_traiettoria, "w");
                 if (ftraj != NULL) fclose(ftraj);
-                
-                tempo_salvataggio_totale += (MPI_Wtime() - start_io); 
             }
 
             // --- 4. TERMALIZZAZIONE ---
@@ -127,7 +135,6 @@ int main(int argc, char *argv[]) {
             double sum_m = 0.0, sum_m2 = 0.0;
             int campioni = 0;
 
-            //Allocazione di reticolo_globale fuori dal ciclo di misurazione ---
             int *reticolo_globale = NULL;
             if (rank == 0) {
                 reticolo_globale = malloc(L * L * sizeof(int));
@@ -137,6 +144,7 @@ int main(int argc, char *argv[]) {
             int *buffer_meas = NULL;
             double *buffer_m_ist = NULL;
             int buffer_idx = 0;
+            
             if (rank == 0 && file_evoluzione != NULL) {
                 buffer_meas = malloc(max_campioni * sizeof(int));
                 buffer_m_ist = malloc(max_campioni * sizeof(double));
@@ -152,10 +160,10 @@ int main(int argc, char *argv[]) {
                     double mag_locale = calcola_magnetizzazione_locale(reticolo, L, L_local);
                     double mag_globale = 0.0;
                     
-                    // CORREZIONE: La Reduce serve a raccogliere dati per output, va nel timer di salvataggio
-                    double start_io = MPI_Wtime();
+                  
+                    double t_comm_start = MPI_Wtime();
                     MPI_Reduce(&mag_locale, &mag_globale, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-                    tempo_salvataggio_totale += (MPI_Wtime() - start_io);
+                    tempo_comunicazione_totale += (MPI_Wtime() - t_comm_start);
 
                     if (rank == 0) {
                         double m_ist = mag_globale / (L * L);
@@ -166,62 +174,52 @@ int main(int argc, char *argv[]) {
                         campioni++;
                         
                         if (file_evoluzione != NULL && buffer_meas != NULL && buffer_m_ist != NULL) {
-                            start_io = MPI_Wtime(); 
-                            
                             if (buffer_idx < max_campioni) {
                                 buffer_meas[buffer_idx] = meas;
                                 buffer_m_ist[buffer_idx] = m_ist;
                                 buffer_idx++;
                             }
-                            tempo_salvataggio_totale += (MPI_Wtime() - start_io); 
                         }
                     }
                 }
 
                 // SALVATAGGIO TRAIETTORIE
                 if (meas % p.frame_freq == 0) {
-                    // Saltiamo le ghost cells (reticolo[0]) prelevando da reticolo[L]
                     int elementi_reali_locali = L * L_local;
                     
-                    double start_io = MPI_Wtime();
+                    double t_comm_start = MPI_Wtime();
                     MPI_Gather(&reticolo[L], elementi_reali_locali, MPI_INT, reticolo_globale, elementi_reali_locali, MPI_INT, 0, MPI_COMM_WORLD);
-                    tempo_salvataggio_totale += (MPI_Wtime() - start_io);
+                    tempo_comunicazione_totale += (MPI_Wtime() - t_comm_start);
                     
                     if (rank == 0) {
-                        start_io = MPI_Wtime(); 
                         FILE *fe = fopen(nome_traiettoria, "a");
                         if (fe != NULL) {
                             salva_configurazione(fe, reticolo_globale, L, beta, meas);
                             fclose(fe);
                         }
-                        tempo_salvataggio_totale += (MPI_Wtime() - start_io); 
                     }
                 }
             }
 
             // CHIUSURA FILE EVOLUZIONE E SALVATAGGIO MEDIE
             if (rank == 0) {
-                double start_io = MPI_Wtime(); 
-                
                 if (file_evoluzione != NULL) {
                     for (int k = 0; k < buffer_idx; k++) {
                         fprintf(file_evoluzione, "%d,%.6f\n", buffer_meas[k], buffer_m_ist[k]);
                     }
                     fclose(file_evoluzione);
                 }
+                
                 if (buffer_meas != NULL) free(buffer_meas);
                 if (buffer_m_ist != NULL) free(buffer_m_ist);
-
                 if (reticolo_globale != NULL) free(reticolo_globale);
 
                 double m_media = sum_m / campioni;
                 double m2_media = sum_m2 / campioni;
                 double varianza = (m2_media - (m_media * m_media) < 0) ? 0 : (m2_media - (m_media * m_media));
-                double std =  sqrt(varianza / campioni);
+                double std = sqrt(varianza / campioni);
                 
                 salva_misura_csv(file_output, L, beta, m_media, m2_media, std);
-                tempo_salvataggio_totale += (MPI_Wtime() - start_io); 
-                
                 printf("Beta: %.3f | <|M|>: %.4f ± %.4f\n", beta, m_media, std);
             }
         }
@@ -235,12 +233,10 @@ int main(int argc, char *argv[]) {
             if (file_tempi != NULL) {
                 fseek(file_tempi, 0, SEEK_END);
                 if (ftell(file_tempi) == 0) {
-                    fprintf(file_tempi, "L,comp_time,comm_time,save_time,total_time\n");
+                    
+                    fprintf(file_tempi, "L,comp_time,comm_time\n");
                 }
-                
-                double total_time = tempo_calcolo_totale + tempo_comunicazione_totale + tempo_salvataggio_totale;
-                fprintf(file_tempi, "%d,%f,%f,%f,%f\n", L, tempo_calcolo_totale, tempo_comunicazione_totale, tempo_salvataggio_totale, total_time);
-                
+                fprintf(file_tempi, "%d,%f,%f\n", L, tempo_calcolo_totale, tempo_comunicazione_totale);
                 fclose(file_tempi);
             }
         }
@@ -249,11 +245,14 @@ int main(int argc, char *argv[]) {
         free(lista_vicini);
         free(indici_rossi);
         free(indici_neri);
+
     }
 
+    // --- Tutti i processi liberano i vettori ---
+    free(p.L_values);
+    free(p.beta_values);
+
     if (rank == 0) {
-        free(p.L_values);
-        free(p.beta_values);
         printf("\nSimulazione completata con successo.\n");
     }
 
