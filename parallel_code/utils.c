@@ -34,14 +34,14 @@ void leggi_parametri(const char *filename, parametri *p) {
     fscanf(file, "%*s %d", &p->meas_freq);
     fscanf(file, "%*s %d", &p->meas_sweeps);
     fscanf(file, "%*s %d", &p->eq_sweeps);
-    fscanf(file, "%*s %d", &p->L_pow_max);
-    fscanf(file, "%*s %d", &p->L_pow_min);
 
-    // 4. Allocazione e calcolo dinamico delle taglie del reticolo
-    p->num_L = (p->L_pow_max - p->L_pow_min) + 1;
-    p->L_values = malloc(p->num_L * sizeof(int));
-    for(int i = 0; i < p->num_L; i++) {
-        p->L_values[i] = 1 << (p->L_pow_min + i); // Shift bitwise per le potenze di 2
+    // 4. Lettura num_L e array degli L
+    fscanf(file, "%*s %d", &p->num_L);
+    p->L_values = malloc(p->num_L * sizeof(double));
+
+    fscanf(file, "%*s"); // Salta l'etichetta "L_values"
+    for (int i = 0; i < p->num_L; i++) {
+        fscanf(file, "%d", &p->L_values[i]);
     }
 
     fclose(file);

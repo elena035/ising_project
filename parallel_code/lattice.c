@@ -104,6 +104,16 @@ void costruisci_liste_scacchiera(int L, int L_local, int rank, int **indici_ross
             int k = calcola_indice_lessicografico(L, i, j);
 
             // Criterio di partizionamento Red-Black basato sulle coordinate assolute
+
+            /*
+            sintassi (*puntatore)[indice]:
+                 * In C, l'operatore array [] ha la precedenza sull'operatore *.
+                 * Senza le tonde, il compilatore valuterebbe *(indici_rossi[count_r]), 
+                 * spostando il doppio puntatore e causando un Segmentation Fault.
+                 * Le parentesi () forzano prima la dereferenziazione per recuperare 
+                 * il vero puntatore all'array nel main, e solo dopo applicano l'indice.
+                 */
+
             if ((i + y_globale) % 2 == 0) {
                 (*indici_rossi)[count_r++] = k;
             } else {
