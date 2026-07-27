@@ -11,37 +11,81 @@
 void leggi_parametri(const char *filename, parametri *p) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
-        printf("ERRORE: Impossibile aprire il file di configurazione %s\n", filename);
-        exit(1);
+        fprintf(stderr, "ERRORE: Impossibile aprire il file di configurazione %s\n", filename);
+        exit(EXIT_FAILURE);
     }
 
     // 1. Lettura costanti fisiche
-    fscanf(file, "%*s %lf", &p->k_B);
-    fscanf(file, "%*s %lf", &p->h);
-    fscanf(file, "%*s %lf", &p->J);
+    if (fscanf(file, "%*s %lf", &p->k_B) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere k_B dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (fscanf(file, "%*s %lf", &p->h) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere h dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (fscanf(file, "%*s %lf", &p->J) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere J dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
 
     // 2. Lettura num_betas e array dei beta
-    fscanf(file, "%*s %d", &p->num_betas);
+    if (fscanf(file, "%*s %d", &p->num_betas) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere num_betas dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    
     p->beta_values = malloc(p->num_betas * sizeof(double));
     
-    fscanf(file, "%*s"); // Salta l'etichetta "betas:"
+    if (fscanf(file, "%*s") == EOF) { // Salta l'etichetta "betas:"
+        fprintf(stderr, "ERRORE: fine inaspettata del file prima dei valori beta.\n");
+        exit(EXIT_FAILURE);
+    } 
+    
     for (int i = 0; i < p->num_betas; i++) {
-        fscanf(file, "%lf", &p->beta_values[i]);
+        if (fscanf(file, "%lf", &p->beta_values[i]) != 1) {
+            fprintf(stderr, "ERRORE: impossibile leggere il valore beta all'indice %d.\n", i);
+            exit(EXIT_FAILURE);
+        }
     }
 
     // 3. Lettura parametri operativi e geometrici
-    fscanf(file, "%*s %d", &p->frame_freq);
-    fscanf(file, "%*s %d", &p->meas_freq);
-    fscanf(file, "%*s %d", &p->meas_sweeps);
-    fscanf(file, "%*s %d", &p->eq_sweeps);
+    if (fscanf(file, "%*s %d", &p->frame_freq) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere frame_freq dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (fscanf(file, "%*s %d", &p->meas_freq) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere meas_freq dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (fscanf(file, "%*s %d", &p->meas_sweeps) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere meas_sweeps dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (fscanf(file, "%*s %d", &p->eq_sweeps) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere eq_sweeps dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
 
     // 4. Lettura num_L e array degli L
-    fscanf(file, "%*s %d", &p->num_L);
-    p->L_values = malloc(p->num_L * sizeof(double));
+    if (fscanf(file, "%*s %d", &p->num_L) != 1) {
+        fprintf(stderr, "ERRORE: impossibile leggere num_L dal file di configurazione.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    
+    p->L_values = malloc(p->num_L * sizeof(int));
 
-    fscanf(file, "%*s"); // Salta l'etichetta "L_values"
+    if (fscanf(file, "%*s") == EOF) { // Salta l'etichetta "L_values"
+        fprintf(stderr, "ERRORE: fine inaspettata del file prima dei valori L.\n");
+        exit(EXIT_FAILURE);
+    } 
+    
     for (int i = 0; i < p->num_L; i++) {
-        fscanf(file, "%d", &p->L_values[i]);
+        if (fscanf(file, "%d", &p->L_values[i]) != 1) {
+            fprintf(stderr, "ERRORE: impossibile leggere il valore L all'indice %d.\n", i);
+            exit(EXIT_FAILURE);
+        }
     }
 
     fclose(file);
@@ -63,8 +107,8 @@ void init_rng(int rank) {
 void inizializza_file_csv(const char *filename) {
     FILE *file = fopen(filename, "w");
     if (file == NULL) {
-        printf("ERRORE: Impossibile creare il file dati %s\n", filename);
-        exit(1);
+        fprintf(stderr, "ERRORE: Impossibile creare il file dati %s\n", filename);
+        exit(EXIT_FAILURE);
     }
 
     fprintf(file, "L,beta,<M>,<M2>,errore su <M>\n");
@@ -78,8 +122,8 @@ void inizializza_file_csv(const char *filename) {
 void salva_misura_csv(const char *filename, int L, double beta, double mag_media, double mag2_media, double errore_mag) {
     FILE *file = fopen(filename, "a");
     if (file == NULL) {
-        printf("ERRORE: Impossibile aprire il file dati %s per il salvataggio\n", filename);
-        exit(1);
+        fprintf(stderr, "ERRORE: Impossibile aprire il file dati %s per il salvataggio\n", filename);
+        exit(EXIT_FAILURE);
     }
 
     fprintf(file, "%d,%f,%f,%f,%f\n", L, beta, mag_media, mag2_media, errore_mag);

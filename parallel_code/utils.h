@@ -32,8 +32,6 @@ typedef struct {
     int L;                 // Taglia lineare corrente del reticolo
     int *L_values;         // Array dei valori di L da testare
     int num_L;             // Numero totale di taglie da testare
-    int L_pow_max;         // Esponente massimo per la generazione delle taglie (es. 2^L_pow_max)
-    int L_pow_min;         // Esponente minimo per la generazione delle taglie
 } parametri;
 
 
